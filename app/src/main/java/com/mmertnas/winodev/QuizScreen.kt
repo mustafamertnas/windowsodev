@@ -1,4 +1,6 @@
-import androidx.compose.animation.animateColorAsState
+package com.mmertnas.winodev
+
+import GrammarOptionButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,14 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,58 +27,51 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.mmertnas.winodev.Data.EnglishQuestions
+import androidx.navigation.NavHostController
 import com.mmertnas.winodev.Data.questions
 
+import kotlin.random.Random
+
 @Composable
-fun GrammarView() {
-    //Mock Soru Seti
+fun QuizScreen(
+    navController: NavHostController
+
+){
+
     val questions = questions
     // --- STATE YÖNETİMİ ---
     var currentIndex by remember { mutableIntStateOf(0) }
     var score by remember { mutableIntStateOf(0) }
-    var isGameOver by remember { mutableStateOf(false) }
+    var QuestionsValue by remember { mutableStateOf(0) }
+    var finishGame by remember { mutableStateOf(false) }
 
     // Seçim yapıldı mı kontrolü (Butonları kilitlemek ve renk değiştirmek için)
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var isAnswerChecked by remember { mutableStateOf(false) }
 
-    // Mevcut soru
     val currentQuestion = questions[currentIndex]
 
-    // --- FONKSİYONLAR ---
-    fun handleAnswerClick(option: String) {
+    fun handleAnswerClick(option: Boolean) {
         if (isAnswerChecked) return
 
-        selectedOption = option
         isAnswerChecked = true
-
-        if (option == currentQuestion.correctAnswer) {
+        QuestionsValue +=10
+        if (option) {
             score += 10
+
         }
     }
 
     fun nextQuestion() {
-        if (currentIndex < questions.size - 1) {
-            currentIndex++
+       currentIndex= Random.nextInt(30)
             selectedOption = null
             isAnswerChecked = false
-        } else {
-            isGameOver = true
-        }
+
     }
 
-    // --- UI TASARIMI ---
-    if (isGameOver) {
-        GrammarResultScreen(score = score, totalQuestions = questions.size) {
-            currentIndex = 0
-            score = 0
-            isGameOver = false
-            selectedOption = null
-            isAnswerChecked = false
-        }
-    } else {
+    if(finishGame){
+    FinishScreen(navController,QuestionsValue,score)
+    }else{
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -126,16 +119,16 @@ fun GrammarView() {
 
 
             //ŞIKLAR
-                currentQuestion.options.forEach { option ->
-                    GrammarOptionButton(
-                        text = option,
-                        isSelected = selectedOption == option,
-                        isCorrect = option == currentQuestion.correctAnswer,
-                        isRevealMode = isAnswerChecked, // Cevap kontrol modu açık mı?
-                        onClick = { handleAnswerClick(option) }
-                    )
-                    Spacer(modifier = Modifier.height(25.dp))
-                }
+            currentQuestion.options.forEach { option ->
+                GrammarOptionButton(
+                    text = option,
+                    isSelected = selectedOption == option,
+                    isCorrect = option == currentQuestion.correctAnswer,
+                    isRevealMode = isAnswerChecked, // Cevap kontrol modu açık mı?
+                    onClick = { handleAnswerClick(option == currentQuestion.correctAnswer) }
+                )
+                Spacer(modifier = Modifier.height(25.dp))
+            }
 
 
             // Açıklama ve İleri Butonu (Sadece cevap verildiyse görünür)
@@ -171,66 +164,15 @@ fun GrammarView() {
                 ) {
                     Text("Sonraki Soru")
                 }
+
+
+            }
+
+            Button({finishGame=true}) {
+                Text("bitir")
             }
         }
     }
-}
 
-@Composable
-fun GrammarOptionButton(
-    text: String,
-    isSelected: Boolean,
-    isCorrect: Boolean,
-    isRevealMode: Boolean,
-    onClick: () -> Unit
-) {
-
-    val backgroundColor by animateColorAsState(
-        targetValue = when {
-            isRevealMode && isCorrect -> Color(0xFF4CAF50) // Doğru cevap her zaman yeşil yanar (göstermek için)
-            isRevealMode && isSelected && !isCorrect -> Color(0xFFEF5350) // Seçili ama yanlışsa kırmızı
-            isRevealMode && !isCorrect -> Color.LightGray.copy(alpha = 0.5f) // Seçilmeyen diğer yanlış şıklar silikleşir
-            else -> Color.White // Henüz seçilmediyse beyaz
-        },
-        label = "ButtonColor"
-    )
-
-    val contentColor = if (isRevealMode && (isCorrect || isSelected)) Color.White else Color.Black
-    val borderColor = if (isSelected && !isRevealMode) Color(0xFF6200EE) else Color.Transparent
-
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(55.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = backgroundColor,
-            contentColor = contentColor
-        ),
-        border = if (!isRevealMode) ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(Color.Gray)) else null,
-        enabled = !isRevealMode // Cevap verildikten sonra tıklanamaz
-    ) {
-        Text(text = text, fontSize = 18.sp, fontWeight = FontWeight.Medium)
     }
-}
 
-@Composable
-fun GrammarResultScreen(score: Int, totalQuestions: Int, onRestart: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "Test Tamamlandı!", style = MaterialTheme.typography.displaySmall)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Skor: $score / ${totalQuestions * 10}",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF6200EE)
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(onClick = onRestart) {
-            Text("Tekrar Başla")
-        }
-    }
-}
