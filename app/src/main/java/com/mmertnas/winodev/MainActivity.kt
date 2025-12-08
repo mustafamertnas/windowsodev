@@ -1,7 +1,7 @@
 package com.mmertnas.winodev
 
 
-import GrammarView
+
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity

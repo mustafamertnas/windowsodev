@@ -17,7 +17,7 @@ import com.mmertnas.winodev.Navigation.AppScreen
 
 
 @Composable
-fun FinishScreen(navController: NavController,questionValue: Int,answerValue:Int){
+fun FinishScreen(navController: NavController,questionValue: Double,answerValue: Double){
 var score = answerValue/questionValue
 
     Column(
