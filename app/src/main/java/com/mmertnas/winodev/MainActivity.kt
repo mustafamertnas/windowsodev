@@ -11,8 +11,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.mmertnas.winodev.Navigation.AppScreen
 
 
@@ -38,8 +40,17 @@ fun AppNavigation() {
         composable(AppScreen.StartingScreen.route) {
             StartingScreen(navController)
         }
-        composable(AppScreen.QuizScreen.route) {
-            QuizScreen(navController)
+        composable(AppScreen.QuizScreen.route,
+            arguments = listOf(
+                navArgument("scoreValue"){type= NavType.FloatType},
+                navArgument("questionValue"){type= NavType.FloatType})
+
+        ) {
+            backStackEntry->
+            val scoreValue: Double=backStackEntry.arguments?.getFloat("scoreValue")?.toDouble()?:0.0
+            val questionValue: Double=backStackEntry.arguments?.getFloat("questionValue")?.toDouble()?:0.0
+
+            QuizScreen(navController, scoreValue = scoreValue,questionValue)
         }
     }
 

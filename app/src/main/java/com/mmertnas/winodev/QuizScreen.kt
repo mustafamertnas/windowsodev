@@ -1,7 +1,5 @@
 package com.mmertnas.winodev
 
-import android.R.attr.onClick
-import android.R.attr.text
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -32,17 +31,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.NavHost
 import androidx.navigation.NavHostController
-import com.mmertnas.winodev.Data.EnglishQuestions
 import com.mmertnas.winodev.Data.questions
 
 import kotlin.random.Random
 
 @Composable
 fun QuizScreen(
-    navController: NavHostController
+    navController: NavHostController,
+    scoreValue: Double,
+    questionValue: Double
 
 ){
 
@@ -52,10 +50,18 @@ fun QuizScreen(
     val questions = questions
 
 
-    var currentIndex by remember { mutableIntStateOf(0) }
+    var currentIndex by remember { mutableIntStateOf(Random.nextInt(questions.size)) }
     var score: Double by remember { mutableStateOf(0.0) }
-    var QuestionsValue: Double by remember { mutableStateOf(0.0) }
+    var questionsValue: Double by remember { mutableStateOf(0.0) }
     var finishGame by remember { mutableStateOf(false) }
+
+
+    LaunchedEffect(scoreValue,questionValue) {
+        score = scoreValue
+        questionsValue = questionValue
+    }
+
+
 
     // Seçim yapıldı mı kontrolü (Butonları kilitlemek ve renk değiştirmek için)
     var selectedOption by remember { mutableStateOf<String?>(null) }
@@ -63,10 +69,27 @@ fun QuizScreen(
     var i : Int by remember { mutableStateOf(0) }
     val currentQuestion = questions[currentIndex]
 
+    fun CheckAnswer(option: String){
+        selectedOption=option
+        if(isAnswerChecked){
+            return
+        }
+        else{
+            questionsValue+=10
+            if (option==currentQuestion.correctAnswer){
+
+                score +=10
+            }
+            isAnswerChecked=true
+
+        }
+
+
+    }
 
 
     fun nextQuestion() {
-       currentIndex= Random.nextInt(30)
+       currentIndex= Random.nextInt(questions.size)
             selectedOption = null
             isAnswerChecked = false
         i++
@@ -80,7 +103,7 @@ fun QuizScreen(
 
 
     if(finishGame){
-    FinishScreen(navController,QuestionsValue,score)
+    FinishScreen(navController,questionsValue,score)
     }else{
         Column(
             modifier = Modifier
@@ -96,7 +119,7 @@ fun QuizScreen(
             LinearProgressIndicator(
                 progress = { (i) / 5.toFloat() },
                 modifier = Modifier.fillMaxWidth().height(8.dp),
-                color = Color(0xFF6200EE),
+                color = Color(0xFF03A9F4),
                 trackColor = Color.LightGray,
             )
 
@@ -136,19 +159,10 @@ fun QuizScreen(
                     isCorrect = option == currentQuestion.correctAnswer,
                     isRevealMode = isAnswerChecked,
                     onClick = {
-                       if(isAnswerChecked){
-                          return@OptionsButton
-                       }
-                        else{
-                            QuestionsValue+=10
-                           if (option==currentQuestion.correctAnswer){
-                               selectedOption=option
-                               score+=10
-                           }
-                           isAnswerChecked=true
 
-                       }
-                        }
+                        CheckAnswer(option)
+
+                    }
                 )
                 Spacer(modifier = Modifier.height(25.dp))
             }
@@ -171,7 +185,9 @@ fun QuizScreen(
                         Text(
                             text = if (selectedOption == currentQuestion.correctAnswer) "Doğru! 🎉" else "Yanlış 😔",
                             fontWeight = FontWeight.Bold,
-                            color = if (selectedOption == currentQuestion.correctAnswer) Color(0xFF2E7D32) else Color(0xFFC62828)
+                            color = if (selectedOption == currentQuestion.correctAnswer) Color(
+                                0xFF03A9F4
+                            ) else Color(0xFFA4051D)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(text = currentQuestion.explanation, style = MaterialTheme.typography.bodyMedium)
@@ -183,7 +199,7 @@ fun QuizScreen(
                 Button(
                     onClick = { nextQuestion() },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA4051D))
                 ) {
                     Text("Sonraki Soru")
                 }
@@ -191,7 +207,8 @@ fun QuizScreen(
 
             }
 
-            Button({finishGame=true}) {
+            Button({finishGame=true},
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03A9F4))) {
                 Text("bitir")
             }
         }
@@ -219,7 +236,6 @@ fun OptionsButton(
     )
 
     val contentColor = if (isRevealMode && (isCorrect || isSelected)) Color.White else Color.Black
-    val borderColor = if (isSelected && !isRevealMode) Color(0xFF6200EE) else Color.Transparent
 
     OutlinedButton(
         onClick = onClick,
@@ -230,16 +246,11 @@ fun OptionsButton(
             contentColor = contentColor
         ),
         border = if (!isRevealMode) ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(Color.Gray)) else null,
-        enabled = !isRevealMode // Cevap verildikten sonra tıklanamaz
+        enabled = !isRevealMode
     ) {
         Text(text = text, fontSize = 18.sp, fontWeight = FontWeight.Medium)
     }
 }
 
 
-fun CheckAnswer(questions: EnglishQuestions){
 
-
-
-
-}
